@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "build": "./render-build.sh",
+    "build": "bash render-build.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
