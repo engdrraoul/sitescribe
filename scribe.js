@@ -857,6 +857,58 @@ async function generateReport(results, baseUrl) {
             .modal-body { grid-template-columns: 1fr; }
             .modal-doc-area { border-left: none; border-top: 1px solid var(--border); }
         }
+
+        /* --- PRINT STYLES (PDF EXPORT) --- */
+        @media print {
+            body { 
+                background: white !important; 
+                color: black !important; 
+                overflow: visible !important;
+            }
+            header, .grid, footer, #previewModal, .btn-print, .stats-bar { 
+                display: none !important; 
+            }
+            #print-container { 
+                display: block !important; 
+                width: 100%;
+            }
+            .print-page {
+                page-break-after: always;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+            }
+            .print-page img {
+                max-width: 100%;
+                max-height: 500px;
+                object-fit: contain;
+                display: block;
+                margin: 0 auto 20px;
+                border: 1px solid #ddd;
+            }
+            .print-page h2 {
+                color: #2563eb;
+                margin-bottom: 5px;
+            }
+            .print-page .print-url {
+                color: #6b7280;
+                font-size: 0.9em;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #e5e7eb;
+            }
+            .print-page .print-desc {
+                line-height: 1.6;
+                font-size: 14px;
+            }
+            .print-page .print-desc h1, .print-page .print-desc h2, .print-page .print-desc h3 {
+                color: #1f2937;
+                margin-top: 15px;
+            }
+        }
+        
+        #print-container {
+            display: none; /* Hide normally */
+        }
     </style>
 </head>
 <body>
@@ -875,9 +927,19 @@ async function generateReport(results, baseUrl) {
             <span>Domaine : <strong>${baseUrl}</strong></span>
             <span>Ressources : <strong id="count-total">${results.length}</strong></span>
         </div>
+        
+        <div style="margin-top: 20px;">
+            <button class="btn-print" onclick="prepareAndPrint()" style="background: var(--primary); color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+                Exporter en PDF
+            </button>
+        </div>
     </header>
 
     <div class="grid">${cardsHtml}</div>
+    
+    <!-- Conteneur réservé pour l'impression -->
+    <div id="print-container"></div>
 
     <footer>
         <p>© 2026 2Cconseil • Expertise Digital & Formation • Interface Pro-Wide</p>
@@ -1022,6 +1084,40 @@ async function generateReport(results, baseUrl) {
                 if (e.key === 'ArrowLeft') prevCard();
             }
         });
+
+        // Fonction pour générer la vue d'impression et lancer l'export PDF
+        function prepareAndPrint() {
+            const container = document.getElementById('print-container');
+            container.innerHTML = ''; // Reset
+            
+            // Generate a cover page
+            container.innerHTML += \`
+                <div class="print-page" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center;">
+                    <h1 style="font-size: 3em; color: #2563eb; margin-bottom: 20px;">Documentation Fonctionnelle</h1>
+                    <h2 style="color: #4b5563; font-weight: normal;">Client : 2Cconseil</h2>
+                    <h3 style="color: #6b7280; margin-top: 10px;">Domaine : \${window.location.hostname || '${baseUrl}'}</h3>
+                    <p style="margin-top: 50px; color: #9ca3af;">Généré automatiquement par SiteScribe Pro</p>
+                </div>
+            \`;
+
+            // Append each report
+            reportsData.forEach(data => {
+                const parsedContent = marked.parse(data.description);
+                container.innerHTML += \`
+                    <div class="print-page">
+                        <h2>\${decodeURIComponent(data.title)}</h2>
+                        <div class="print-url">\${data.url}</div>
+                        <img src="\${data.screenshot}" alt="\${data.title}">
+                        <div class="print-desc">
+                            \${parsedContent}
+                        </div>
+                    </div>
+                \`;
+            });
+
+            // Trigger browser print dialog
+            window.print();
+        }
     </script>
 </body>
 </html>`;
